@@ -3,6 +3,7 @@ import { Container } from './App.styled';
 import { AddContactForm } from './AddContactForm/AddContactForm';
 import { nanoid } from 'nanoid';
 import { Contacts } from './Contacts/Contacts';
+import { Filter } from './Filter/Filter';
 
 export class App extends Component {
   state = {
@@ -11,6 +12,14 @@ export class App extends Component {
   };
 
   addContact = ({ name, phone }) => {
+    if (this.state.contacts.some(con => con.name === name)) {
+      alert('Contact with this name already exist');
+      return;
+    }
+    if (this.state.contacts.some(con => con.phone === phone)) {
+      alert('Contact with this phone already exist');
+      return;
+    }
     this.setState(prev => {
       return {
         contacts: [
@@ -25,16 +34,24 @@ export class App extends Component {
     });
   };
 
-  deleteContact = id => {
-    this.setState(prev => {
-      const idx = prev.contacts.findIndex(cont => cont.id === id);
-      if (idx === 0 || idx === -1) {
-        return { contacts: [] };
-      }
-      return {
-        contacts: [...prev.contacts].splice(idx, 1),
-      };
-    });
+  deleteContact = deleteId => {
+    this.setState(prev => ({
+      contacts: prev.contacts.filter(({ id }) => id !== deleteId),
+    }));
+  };
+
+  handleInput = e => {
+    const newInput = e.target.value.trim().toLowerCase();
+    this.setState({ filter: newInput });
+  };
+
+  getFilteredContacts = () => {
+    if (!this.state.filter) {
+      return this.state.contacts;
+    }
+    return this.state.contacts.filter(({ name }) =>
+      name.toLowerCase().includes(this.state.filter)
+    );
   };
 
   render() {
@@ -43,10 +60,17 @@ export class App extends Component {
         <h1>Phonebook</h1>
         <AddContactForm onAdd={this.addContact} />
         <h2>Contacts</h2>
-        <Contacts
-          contacts={this.state.contacts}
-          onDelete={this.deleteContact}
-        />
+        {this.state.contacts.length ? (
+          <>
+            <Filter onChange={this.handleInput} />
+            <Contacts
+              contacts={this.getFilteredContacts()}
+              onDelete={this.deleteContact}
+            />
+          </>
+        ) : (
+          <p>No contacts yet</p>
+        )}
       </Container>
     );
   }
